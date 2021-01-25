@@ -1,0 +1,15 @@
+{
+	"name": "godaddns",
+	"version": "1.0.0",
+	"description": "DDNS for your GoDaddy domains",
+	"main": "godaddns.js",
+	"scripts": {
+		"run": "node godaddns.js"
+	},
+	"keywords": [],
+	"author": "",
+	"license": "ISC",
+	"dependencies": {
+		"inquirer": "^7.3.3"
+	}
+}
