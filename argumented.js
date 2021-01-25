@@ -1,6 +1,6 @@
 'use strict';
 
-const savedArgs = [];
+const argEntries = [];
 let name = '';
 let desc = '';
 
@@ -9,7 +9,7 @@ let desc = '';
  */
 
 
-function getArg(args, cb, desc, required = false) {
+function makeEntry(args, cb, desc, required = false) {
 	if (!args instanceof Array) {
 		args = [args];
 	}
@@ -17,10 +17,10 @@ function getArg(args, cb, desc, required = false) {
 }
 
 
-function execute(arg) {
-	const idx = process.argv.findIndex(currentArg => arg.args.includes(currentArg));
+function execute(entry) {
+	const idx = process.argv.findIndex(arg => entry.args.includes(arg));
 	if (idx >= 0) {
-		if (arg?.cb?.(...process.argv.slice(idx + 1, idx + arg.argNumber + 1))) {
+		if (entry?.cb?.(...process.argv.slice(idx + 1, idx + entry.argNumber + 1))) {
 			process.exit(0);
 		}
 	}
@@ -31,12 +31,12 @@ function printHelpPage() {
 	let invocation = '';
 	let paramDesc = '';
 
-	for (const e of savedArgs) {
-		invocation += (e.required? ' ' : ' [') + e.args.join(', ') +
-			(e.argNumber? ' (' + e.argNumber + ' args)' : '') + (e.required? '' : ']');
+	for (const entry of argEntries) {
+		invocation += (entry.required? ' ' : ' [') + entry.args.join(', ') +
+			(entry.argNumber? ' (' + entry.argNumber + ' args)' : '') + (entry.required? '' : ']');
 
-		paramDesc += '\t' + e.args.join(' ') + (e.argNumber? ' (+' + e.argNumber + ' args)' : '') +
-			'\t' + e.desc + '\n';
+		paramDesc += '\t' + entry.args.join(', ') + (entry.argNumber? ' (+' + entry.argNumber + ' args)' : '') +
+			'\t' + entry.desc + '\n';
 	}
 
 	console.log(desc + '\n\n' +
@@ -63,9 +63,9 @@ function add(args, callback = null, description = '', required = false) {
 	if (!args instanceof Array) {
 		args = [args];
 	}
-	const arg = getArg(args, callback, description, required);
-	savedArgs.push(arg);
-	execute(arg);
+	const entry = makeEntry(args, callback, description, required);
+	argEntries.push(entry);
+	execute(entry);
 	return this;
 }
 
@@ -80,6 +80,15 @@ function has(args) {
 
 
 function done() {
+	for (const entry of argEntries.filter(entry => entry.required)) {
+		for (const arg of entry.args) {
+			if (!process.argv.includes(arg)) {
+				console.error('Error: required argument missing: ' + arg + '.\n' +
+					'Use --help for usage info.');
+				process.exit(0xf000);
+			}
+		}
+	}
 	add(['-h', '--help'], printHelpPage, 'Show this page');
 }
 

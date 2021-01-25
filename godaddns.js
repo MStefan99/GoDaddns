@@ -12,6 +12,7 @@ const ipifyEndpoint = 'https://api.ipify.org';
 
 let configReadable = false;
 let configWritable = false;
+let verbose = false;
 
 
 const configFilename = './config.json';
@@ -27,6 +28,32 @@ const defaultConfig = {
 let config = defaultConfig;
 
 
+function clamp(val, min, max) {
+	return val < min? min : val > max? max : val;
+}
+
+
+function info(...data) {
+	if (verbose) {
+		let line = '';
+		for (const element of data) {
+			switch (typeof element) {
+				case 'string':
+				case 'symbol':
+					line += element + ' ';
+					break;
+				case 'object':
+					line += JSON.stringify(element) + ' ';
+					break;
+				default:
+					line += element.toString() + ' ';
+			}
+		}
+		console.info(line);
+	}
+}
+
+
 function fetch(url, init = {}) {
 	return new Promise((resolve, reject) => {
 		let str = '';
@@ -37,6 +64,10 @@ function fetch(url, init = {}) {
 			});
 
 			res.on('end', () => {
+				if (Math.floor(res.statusCode / 100) !== 2) {
+					console.error('Error: HTTP request failed:', str);
+					process.exit(~1);
+				}
 				resolve(str);
 			});
 		});
@@ -44,6 +75,10 @@ function fetch(url, init = {}) {
 		req.on('error', err => {
 			reject(err);
 		});
+
+		if (init?.method?.toUpperCase() !== 'GET') {
+			req.end(init.body);
+		}
 	});
 }
 
@@ -52,12 +87,15 @@ function fetch(url, init = {}) {
 	argumented.init('GoDaddns. Never get a wrong IP again.');
 	argumented.add(['-s', '--setup'], null, 'Starts the app in an interactive mode ' +
 		'allowing you to select which records to update');
+	argumented.add(['-v', '--verbose'], () => {verbose = true;}, 'Enable more verbose output');
 	argumented.done();
 
 	fs.access(configFilename, fs.constants.R_OK, err => {
 		configReadable = !err;
+		info('Checking config file. Readable:', configReadable);
 		fs.access(configFilename, fs.constants.W_OK, err => {
 			configWritable = !err;
+			info('Checking config file. Writable:', configWritable);
 		});
 
 		if (configReadable) {
@@ -73,7 +111,7 @@ function fetch(url, init = {}) {
 						process.exit(~0);
 					}
 				} else {
-					console.info('Config read. Connecting to GoDaddy...');
+					info('Config read. Connecting to GoDaddy...');
 					run();
 				}
 			});
@@ -100,7 +138,7 @@ function saveConfig() {
 				console.error('Cannot write the config file! Please check the permissions');
 				reject(err);
 			} else {
-				console.log('Your settings have been saved! Please restart the app with ');
+				console.log('Your settings have been saved!');
 				resolve();
 			}
 		});
@@ -114,12 +152,14 @@ function getAuthHeader(config) {
 
 
 async function setup() {
+	info('Downloading domain list from GoDaddy...');
 	const domains = JSON.parse(await fetch(godaddyEndpoint + '/v1/domains/', {
 			headers: {
 				Authorization: getAuthHeader(config)
 			}
 		})
 	);
+	info('Domains:', domains);
 	const answers = await inquirer.prompt({
 		type: 'checkbox',
 		message: 'Select domains to use: ',
@@ -135,6 +175,7 @@ async function setup() {
 	console.log('Excellent! Let\'s now choose which records you want to update for each domain.');
 
 	for (const domain of config.domains) {
+		info('Downloading record list for domain', domain, 'from GoDaddy...');
 		const records = JSON.parse(await fetch(godaddyEndpoint + '/v1/domains/'
 			+ domain.name + '/records/A/', {
 				headers: {
@@ -142,6 +183,7 @@ async function setup() {
 				}
 			})
 		);
+		info('Records:', records);
 		const answers = await inquirer.prompt({
 			type: 'checkbox',
 			message: 'Select records for ' + domain.name + ':',
@@ -162,5 +204,20 @@ async function setup() {
 
 async function run() {
 	console.log('Starting up GoDaddns...');
-	console.log(config);
+	info('Getting IP address...');
+	const ip = await fetch(ipifyEndpoint);
+	info('Got IP address:', ip);
+
+	for (const domain of config.domains) {
+		info('Created records for domain', domain.name);
+		for (const record of domain.records) {
+			const newRecord = {
+				name: record.name,
+				data: ip,
+				type: 'A',
+				ttl: 3600
+			};
+			info(newRecord);
+		}
+	}
 }
