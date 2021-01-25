@@ -46,8 +46,10 @@ function fetch(url, init) {
 
 
 (() => {
+	argumented.init('GoDaddns. Never get a wrong IP again.');
 	argumented.add(['-s', '--setup'], null, 'Starts the app in an interactive mode ' +
-		'allowing you to select which records to update', false);
+		'allowing you to select which records to update');
+	argumented.done();
 
 	fs.access(configFilename, fs.constants.R_OK, err => {
 		if (err) {
@@ -67,7 +69,6 @@ function fetch(url, init) {
 			fs.readFile(path.resolve(configFilename), 'utf-8', (err, data) => {
 				config = JSON.parse(data);
 
-				argumented.parse(process.argv, 'GoDaddns. Never get a wrong IP again.');
 				if (argumented.has(['-s', '--setup'])) {
 					console.info('Welcome to GoDaddns! Let\'s choose the records you want to be updated.');
 					setup(config);
