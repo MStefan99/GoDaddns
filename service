@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=_cwd_
+ExecStart=/usr/bin/node _path_
 Restart=on-failure
 TimeoutSec=30
 
