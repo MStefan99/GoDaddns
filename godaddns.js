@@ -13,6 +13,7 @@ const ipifyEndpoint = 'https://api.ipify.org';
 let configReadable = false;
 let configWritable = false;
 let verbose = false;
+let ip = '0.0.0.0';
 
 
 const configFilename = './config.json';
@@ -89,7 +90,9 @@ function fetch(url, init = {}) {
 	argumented.init('GoDaddns. Never get a wrong IP again.');
 	argumented.add(['-s', '--setup'], null, 'Starts the app in an interactive mode ' +
 		'allowing you to select which records to update');
-	argumented.add(['-v', '--verbose'], () => {verbose = true;}, 'Enable more verbose output');
+	argumented.add(['-v', '--verbose'], () => {
+		verbose = true;
+	}, 'Enable more verbose output');
 	argumented.done();
 
 	fs.access(configFilename, fs.constants.R_OK, err => {
@@ -107,14 +110,17 @@ function fetch(url, init = {}) {
 				if (argumented.has(['-s', '--setup'])) {
 					if (configWritable) {
 						console.info('Welcome to GoDaddns! Let\'s choose the records you want to be updated.');
-						setup().then(run);
+						setup().then(() => console.log('Awesome! You can now launch GoDaddns ' +
+							'at any time using node ./godaddns.js'));
 					} else {
 						console.error('Cannot write the config file! Please check the permissions');
 						process.exit(~0);
 					}
 				} else {
 					info('Config read. Connecting to GoDaddy...');
-					run();
+					console.log('Starting up GoDaddns...');
+					enableAutoUpdate();
+					init();
 				}
 			});
 		} else {
@@ -204,14 +210,28 @@ async function setup() {
 }
 
 
-async function run() {
-	console.log('Starting up GoDaddns...');
-	info('Getting IP address...');
-	const ip = await fetch(ipifyEndpoint);
-	info('Got IP address:', ip);
+function init() {
+	process.on('beforeExit', stop);
+	process.on('SIGTERM', stop);
+	process.on('SIGINT', stop);
+	enableAutoUpdate();
+	run();
+}
 
-	await setIPS(ip);
-	console.log('All records updated!');
+
+async function run() {
+	info('Getting IP address...');
+	const newIP = await fetch(ipifyEndpoint);
+	info('Got IP address:', newIP);
+
+	if (newIP !== ip) {
+		console.log('Your IP has changed, updating...');
+		ip = newIP;
+		await setIPS(newIP);
+		console.log('All records updated!');
+	} else {
+		console.log('IP unchanged, nothing to do');
+	}
 }
 
 
@@ -221,6 +241,16 @@ async function stop() {
 	await setIPS('0.0.0.0');
 	console.log('All records reset, GoDaddns done');
 	process.exit();
+}
+
+
+function enableAutoUpdate() {
+	setInterval(() => {
+		info('Updating IP...');
+		if (config.autoUpdate?.enabled) {
+			run();
+		}
+	}, 1000 * clamp(config.autoUpdate?.interval, 5, 1440));
 }
 
 
@@ -247,7 +277,3 @@ async function setIPS(ip) {
 		}
 	}
 }
-
-
-process.on('beforeExit', stop);
-process.on('SIGTERM', stop);
