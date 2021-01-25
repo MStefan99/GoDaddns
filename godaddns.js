@@ -86,6 +86,31 @@ function fetch(url, init = {}) {
 }
 
 
+async function setIPS(ip) {
+	for (const domain of config.domains) {
+		info('Created records for domain', domain.name);
+		for (const record of domain.records) {
+			const newRecord = {
+				name: record.name,
+				data: ip,
+				type: 'A',
+				ttl: 3600
+			};
+			info(newRecord);
+			const res = await fetch(godaddyEndpoint + '/v1/domains/' + domain.name + '/records/A/' + record.name, {
+				method: 'PUT',
+				headers: {
+					'Authorization': getAuthHeader(),
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify([newRecord])
+			});
+			info('Record updated.');
+		}
+	}
+}
+
+
 (() => {
 	argumented.init('GoDaddns. Never get a wrong IP again.');
 	argumented.add(['-s', '--setup'], null, 'Starts the app in an interactive mode ' +
@@ -219,6 +244,16 @@ function init() {
 }
 
 
+function enableAutoUpdate() {
+	setInterval(() => {
+		info('Updating IP...');
+		if (config.autoUpdate?.enabled) {
+			run();
+		}
+	}, 1000 * 60 * clamp(config.autoUpdate?.interval, 5, 1440));
+}
+
+
 async function run() {
 	info('Getting IP address...');
 	const newIP = await fetch(ipifyEndpoint);
@@ -241,39 +276,4 @@ async function stop() {
 	await setIPS('0.0.0.0');
 	console.log('All records reset, GoDaddns done');
 	process.exit();
-}
-
-
-function enableAutoUpdate() {
-	setInterval(() => {
-		info('Updating IP...');
-		if (config.autoUpdate?.enabled) {
-			run();
-		}
-	}, 1000 * clamp(config.autoUpdate?.interval, 5, 1440));
-}
-
-
-async function setIPS(ip) {
-	for (const domain of config.domains) {
-		info('Created records for domain', domain.name);
-		for (const record of domain.records) {
-			const newRecord = {
-				name: record.name,
-				data: ip,
-				type: 'A',
-				ttl: 3600
-			};
-			info(newRecord);
-			const res = await fetch(godaddyEndpoint + '/v1/domains/' + domain.name + '/records/A/' + record.name, {
-				method: 'PUT',
-				headers: {
-					'Authorization': getAuthHeader(),
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify([newRecord])
-			});
-			info('Record updated.');
-		}
-	}
 }
