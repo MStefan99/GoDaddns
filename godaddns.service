@@ -1,0 +1,12 @@
+[Unit]
+Description=Your very own DDNS
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=_cwd_
+Restart=on-failure
+TimeoutSec=30
+
+[Install]
+WantedBy=multi-user.target
