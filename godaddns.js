@@ -58,7 +58,7 @@ function fetch(url, init = {}) {
 	return new Promise((resolve, reject) => {
 		let str = '';
 
-		const req = https.get(url, init, res => {
+		const req = https.request(url, init, res => {
 			res.on('data', data => {
 				str += data;
 			});
@@ -78,6 +78,8 @@ function fetch(url, init = {}) {
 
 		if (init?.method?.toUpperCase() !== 'GET') {
 			req.end(init.body);
+		} else {
+			req.end();
 		}
 	});
 }
@@ -146,7 +148,7 @@ function saveConfig() {
 }
 
 
-function getAuthHeader(config) {
+function getAuthHeader() {
 	return 'sso-key ' + config.apiKey + ':' + config.apiSecret;
 }
 
@@ -155,7 +157,7 @@ async function setup() {
 	info('Downloading domain list from GoDaddy...');
 	const domains = JSON.parse(await fetch(godaddyEndpoint + '/v1/domains/', {
 			headers: {
-				Authorization: getAuthHeader(config)
+				'Authorization': getAuthHeader()
 			}
 		})
 	);
@@ -179,7 +181,7 @@ async function setup() {
 		const records = JSON.parse(await fetch(godaddyEndpoint + '/v1/domains/'
 			+ domain.name + '/records/A/', {
 				headers: {
-					Authorization: getAuthHeader(config)
+					'Authorization': getAuthHeader()
 				}
 			})
 		);
@@ -208,6 +210,21 @@ async function run() {
 	const ip = await fetch(ipifyEndpoint);
 	info('Got IP address:', ip);
 
+	await setIPS(ip);
+	console.log('All records updated!');
+}
+
+
+async function stop() {
+	console.log('Shutting down GoDaddns...');
+
+	await setIPS('0.0.0.0');
+	console.log('All records reset, GoDaddns done');
+	process.exit();
+}
+
+
+async function setIPS(ip) {
 	for (const domain of config.domains) {
 		info('Created records for domain', domain.name);
 		for (const record of domain.records) {
@@ -218,6 +235,19 @@ async function run() {
 				ttl: 3600
 			};
 			info(newRecord);
+			const res = await fetch(godaddyEndpoint + '/v1/domains/' + domain.name + '/records/A/' + record.name, {
+				method: 'PUT',
+				headers: {
+					'Authorization': getAuthHeader(),
+					'Content-Type': 'application/json'
+				},
+				body: JSON.stringify([newRecord])
+			});
+			info('Record updated.');
 		}
 	}
 }
+
+
+process.on('beforeExit', stop);
+process.on('SIGTERM', stop);
