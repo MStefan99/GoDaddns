@@ -126,40 +126,41 @@ async function setIPS(ip) {
 		fs.access(configFilename, fs.constants.W_OK, err => {
 			configWritable = !err;
 			info('Checking config file. Writable:', configWritable);
-		});
 
-		if (configReadable) {
-			fs.readFile(path.resolve(configFilename), 'utf8', (err, data) => {
-				config = JSON.parse(data);
+			if (configReadable) {
+				fs.readFile(path.resolve(configFilename), 'utf8', (err, data) => {
+					config = JSON.parse(data);
 
-				if (argumented.has(['-s', '--setup'])) {
-					if (configWritable) {
-						console.info('Welcome to GoDaddns! Let\'s choose the records you want to be updated.');
-						setup().then(() => console.log('Awesome! You can now launch GoDaddns ' +
-							'at any time using node ./godaddns.js'));
+					if (argumented.has(['-s', '--setup'])) {
+						if (configWritable) {
+							console.info('Welcome to GoDaddns! Let\'s choose the records you want to be updated.');
+							setup().then(() => console.log('Awesome! You can now launch GoDaddns ' +
+								'at any time using node ./godaddns.js'));
+						} else {
+							console.error('Cannot write the config file! Please check the permissions');
+							process.exit(~0);
+						}
 					} else {
-						console.error('Cannot write the config file! Please check the permissions');
-						process.exit(~0);
+						info('Config read. Connecting to GoDaddy...');
+						console.log('Starting up GoDaddns...');
+						enableAutoUpdate();
+						init();
 					}
-				} else {
-					info('Config read. Connecting to GoDaddy...');
-					console.log('Starting up GoDaddns...');
-					enableAutoUpdate();
-					init();
-				}
-			});
-		} else {
-			console.error('Error: config file cannot be read.');
-			if (configWritable) {
-				fs.writeFile(configFilename, JSON.stringify(defaultConfig), err => {
-					console.log('Sample config file (config.json) created. Please edit the file and restart the application.');
-					process.exit();
 				});
 			} else {
-				console.error('Error: cannot create sample config file. Please check the permissions.');
-				process.exit(~0);
+				console.error('Error: config file cannot be read.');
+				if (configWritable) {
+					fs.writeFile(configFilename, JSON.stringify(defaultConfig), err => {
+						console.log('Sample config file (config.json) created. Please edit the file and restart the application.');
+						process.exit();
+					});
+				} else {
+					console.error('Error: cannot create sample config file. Please check the permissions or try creating ' +
+						'config.json manually.');
+					process.exit(~0);
+				}
 			}
-		}
+		});
 	});
 })();
 

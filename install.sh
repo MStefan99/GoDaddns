@@ -7,6 +7,6 @@ cd "${workDir}" || exit
 
 # Starting and installing GoDaddns
 
-sed "s#_cwd_#$(pwd)/godaddns.js#" ./godaddns.service | sudo tee /etc/systemd/system/godaddns.service 1>/dev/null
+sed "s#_cwd_#$(pwd)/godaddns.js#" ./service | sudo tee /etc/systemd/system/godaddns.service 1>/dev/null
 sudo systemctl start godaddns
 sudo systemctl enable godaddns
