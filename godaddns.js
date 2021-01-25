@@ -16,7 +16,7 @@ let verbose = false;
 let ip = '0.0.0.0';
 
 
-const configFilename = './config.json';
+const configFilename = path.resolve(__dirname, './config.json');
 const defaultConfig = {
 	apiKey: 'Paste your API key here',
 	apiSecret: 'Paste your API secret here',
