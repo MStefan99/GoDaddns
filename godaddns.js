@@ -10,6 +10,9 @@ const argumented = require('./argumented');
 const godaddyEndpoint = 'https://api.godaddy.com/';
 const ipifyEndpoint = 'https://api.ipify.org';
 
+let configReadable = false;
+let configWritable = false;
+
 
 const configFilename = './config.json';
 const defaultConfig = {
@@ -24,7 +27,7 @@ const defaultConfig = {
 let config = defaultConfig;
 
 
-function fetch(url, init) {
+function fetch(url, init = {}) {
 	return new Promise((resolve, reject) => {
 		let str = '';
 
@@ -52,34 +55,57 @@ function fetch(url, init) {
 	argumented.done();
 
 	fs.access(configFilename, fs.constants.R_OK, err => {
-		if (err) {
-			console.error('Error: config file cannot be read.');
-			fs.access(__dirname, fs.constants.W_OK, err => {
-				if (err) {
-					console.error('Error: cannot create sample config file. Please check the permissions.');
-					process.exit(~0);
-				} else {
-					fs.writeFile(configFilename, JSON.stringify(defaultConfig), err => {
-						console.log('Sample config file (config.json) created. Please edit the file and restart the application.');
-						process.exit();
-					});
-				}
-			});
-		} else {
-			fs.readFile(path.resolve(configFilename), 'utf-8', (err, data) => {
+		configReadable = !err;
+		fs.access(configFilename, fs.constants.W_OK, err => {
+			configWritable = !err;
+		});
+
+		if (configReadable) {
+			fs.readFile(path.resolve(configFilename), 'utf8', (err, data) => {
 				config = JSON.parse(data);
 
 				if (argumented.has(['-s', '--setup'])) {
-					console.info('Welcome to GoDaddns! Let\'s choose the records you want to be updated.');
-					setup(config);
+					if (configWritable) {
+						console.info('Welcome to GoDaddns! Let\'s choose the records you want to be updated.');
+						setup().then(run);
+					} else {
+						console.error('Cannot write the config file! Please check the permissions');
+						process.exit(~0);
+					}
 				} else {
 					console.info('Config read. Connecting to GoDaddy...');
-					run(config);
+					run();
 				}
 			});
+		} else {
+			console.error('Error: config file cannot be read.');
+			if (configWritable) {
+				fs.writeFile(configFilename, JSON.stringify(defaultConfig), err => {
+					console.log('Sample config file (config.json) created. Please edit the file and restart the application.');
+					process.exit();
+				});
+			} else {
+				console.error('Error: cannot create sample config file. Please check the permissions.');
+				process.exit(~0);
+			}
 		}
 	});
 })();
+
+
+function saveConfig() {
+	return new Promise((resolve, reject) => {
+		fs.writeFile(configFilename, JSON.stringify(config), 'utf8', err => {
+			if (err) {
+				console.error('Cannot write the config file! Please check the permissions');
+				reject(err);
+			} else {
+				console.log('Your settings have been saved! Please restart the app with ');
+				resolve();
+			}
+		});
+	});
+}
 
 
 function getAuthHeader(config) {
@@ -87,16 +113,54 @@ function getAuthHeader(config) {
 }
 
 
-async function setup(config) {
-	console.log('Setup');
+async function setup() {
+	const domains = JSON.parse(await fetch(godaddyEndpoint + '/v1/domains/', {
+			headers: {
+				Authorization: getAuthHeader(config)
+			}
+		})
+	);
+	const answers = await inquirer.prompt({
+		type: 'checkbox',
+		message: 'Select domains to use: ',
+		name: 'domains',
+		choices: domains.map(domain => {
+			return {name: domain.domain};
+		})
+	});
+
+	config.domains = answers.domains.map(domain => {
+		return {name: domain};
+	});
+	console.log('Excellent! Let\'s now choose which records you want to update for each domain.');
+
+	for (const domain of config.domains) {
+		const records = JSON.parse(await fetch(godaddyEndpoint + '/v1/domains/'
+			+ domain.name + '/records/A/', {
+				headers: {
+					Authorization: getAuthHeader(config)
+				}
+			})
+		);
+		const answers = await inquirer.prompt({
+			type: 'checkbox',
+			message: 'Select records for ' + domain.name + ':',
+			name: 'records',
+			choices: records
+				.filter((record, idx) => records.findIndex(r => r.name === record.name) === idx)  // removing duplicates
+				.map(record => {
+					return {name: record.name, type: record.type};
+				})
+		});
+		domain.records = answers.records.map(record => {
+			return {type: 'A', name: record};
+		});
+	}
+	await saveConfig().catch(err => process.exit(~0));
 }
 
 
-async function run(config) {
-	console.log(JSON.parse(await fetch(godaddyEndpoint + '/v1/domains/', {
-			headers: {
-				'Authorization': getAuthHeader(config)
-			}
-		})
-	));
+async function run() {
+	console.log('Starting up GoDaddns...');
+	console.log(config);
 }
