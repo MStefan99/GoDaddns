@@ -23,7 +23,7 @@ const defaultConfig = {
 	domains: [],
 	autoUpdate: {
 		enabled: true,
-		interval: 3600
+		interval: 60
 	}
 };
 let config = defaultConfig;
@@ -149,16 +149,19 @@ async function setIPS(ip) {
 				});
 			} else {
 				console.error('Error: config file cannot be read.');
-				if (configWritable) {
-					fs.writeFile(configFilename, JSON.stringify(defaultConfig), err => {
-						console.log('Sample config file (config.json) created. Please edit the file and restart the application.');
-						process.exit();
-					});
-				} else {
-					console.error('Error: cannot create sample config file. Please check the permissions or try creating ' +
-						'config.json manually.');
-					process.exit(~0);
-				}
+				fs.access(__dirname, fs.constants.W_OK, err => {
+					if (!err) {
+						configWritable = configReadable = true;
+						fs.writeFile(configFilename, JSON.stringify(defaultConfig), err => {
+							console.log('Sample config file (config.json) created. Please edit the file and restart the application.');
+							process.exit();
+						});
+					} else {
+						console.error('Error: cannot create sample config file. Please check the permissions or try creating ' +
+							'config.json manually.');
+						process.exit(~0);
+					}
+				});
 			}
 		});
 	});
