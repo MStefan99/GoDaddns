@@ -1,5 +1,5 @@
 [Unit]
-Description=Your very own DDNS
+Description=GoDaddns: Your very own DDNS.
 After=network.target
 
 [Service]

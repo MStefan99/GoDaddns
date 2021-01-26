@@ -8,7 +8,7 @@ const inquirer = require('inquirer');
 const argumented = require('./argumented');
 
 const godaddyEndpoint = 'https://api.godaddy.com/';
-const ipifyEndpoint = 'https://api.ipify.org';
+const ipifyEndpoint = 'https://ipapi.co/ip/';
 
 let configReadable = false;
 let configWritable = false;
@@ -31,8 +31,11 @@ let config = defaultConfig;
 
 
 function clamp(val, min, max) {
-	if (isNaN(val)) return null;
-	else return +val < min? min : val > max? max : val;
+	if (isNaN(val)) {
+		return null;
+	} else {
+		return +val < min? min : val > max? max : val;
+	}
 }
 
 
@@ -99,14 +102,16 @@ async function setIPS(ip) {
 				ttl: clamp(config.ttl, 600, 604800) || 3600
 			};
 			info(newRecord);
-			const res = await fetch(godaddyEndpoint + '/v1/domains/' + domain.name + '/records/A/' + record.name, {
-				method: 'PUT',
-				headers: {
-					'Authorization': getAuthHeader(),
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify([newRecord])
-			});
+			const res = await fetch(godaddyEndpoint + '/v1/domains/' + domain.name + '/records/' +
+				record.type + '/' + record.name, {
+					method: 'PUT',
+					headers: {
+						'Authorization': getAuthHeader(),
+						'Content-Type': 'application/json'
+					},
+					body: JSON.stringify([newRecord])
+				}
+			);
 			info('Record updated.');
 		}
 	}
@@ -115,7 +120,7 @@ async function setIPS(ip) {
 
 function saveConfig() {
 	return new Promise((resolve, reject) => {
-		fs.writeFile(configFilename, JSON.stringify(config, null, '\t'),
+		fs.writeFile(configFilename, JSON.stringify(config, null, 2),
 			'utf8', err => {
 				if (err) {
 					console.error('Cannot write the config file! Please check the permissions');
@@ -156,16 +161,25 @@ function getAuthHeader() {
 					if (argumented.has(['-s', '--setup'])) {
 						if (configWritable) {
 							console.info('Welcome to GoDaddns! Let\'s choose the records you want to be updated.');
-							setup().then(() => console.log('Awesome! You can now launch GoDaddns ' +
-								'at any time using node ./godaddns.js'));
+							setup()
+								.then(() => inquirer.prompt({
+									name: 'start',
+									type: 'confirm',
+									message: 'Do you want to start GoDaddns now?'
+								}))
+								.then(answers => {
+									if (answers.start) {
+										init();
+									} else {
+										console.log('You can start GoDaddns at any time by running node ./godaddns.js');
+									}
+								});
 						} else {
 							console.error('Cannot write the config file! Please check the permissions');
 							process.exit(~0);
 						}
 					} else {
 						info('Config read. Connecting to GoDaddy...');
-						console.log('Starting up GoDaddns...');
-						enableAutoUpdate();
 						init();
 					}
 				});
@@ -175,7 +189,8 @@ function getAuthHeader() {
 					if (!err) {
 						configWritable = configReadable = true;
 						saveConfig().then(() => {
-							console.log('Sample config file (config.json) created. Please edit the file and restart the application.');
+							console.log('Sample config file created. Please edit the file and restart the application ' +
+								'or launch with -s to start interactive setup.');
 						});
 					} else {
 						console.error('Error: cannot create sample config file. Please check the permissions or try creating ' +
@@ -190,6 +205,25 @@ function getAuthHeader() {
 
 
 async function setup() {
+	if (config.apiKey.match(' ') || config.apiSecret.match(' ')) {
+		console.log('Now you will need to update your credentials to connect to GoDaddy.');
+		const answers = await inquirer.prompt([
+			{
+				type: 'input',
+				name: 'apiKey',
+				message: 'Your GoDaddy API Key:',
+				validate: val => val.length && !val.match(' ')
+			},
+			{
+				type: 'input',
+				name: 'apiSecret',
+				message: 'Your GoDaddy API secret:',
+				validate: val => val.length && !val.match(' ')
+			}
+		]);
+		Object.assign(config, answers);
+	}
+
 	info('Downloading domain list from GoDaddy...');
 	const domains = JSON.parse(await fetch(godaddyEndpoint + '/v1/domains/', {
 			headers: {
@@ -242,6 +276,8 @@ async function setup() {
 
 
 function init() {
+	console.log('Starting up GoDaddns...');
+
 	process.on('beforeExit', stop);
 	process.on('SIGTERM', stop);
 	process.on('SIGINT', stop);
