@@ -111,6 +111,26 @@ async function setIPS(ip) {
 }
 
 
+function saveConfig() {
+	return new Promise((resolve, reject) => {
+		fs.writeFile(configFilename, JSON.stringify(config, null, '\t'),
+			'utf8', err => {
+				if (err) {
+					console.error('Cannot write the config file! Please check the permissions');
+					reject(err);
+				} else {
+					resolve();
+				}
+			});
+	});
+}
+
+
+function getAuthHeader() {
+	return 'sso-key ' + config.apiKey + ':' + config.apiSecret;
+}
+
+
 (() => {
 	argumented.init('GoDaddns. Never get a wrong IP again.');
 	argumented.add(['-s', '--setup'], null, 'Starts the app in an interactive mode ' +
@@ -148,13 +168,12 @@ async function setIPS(ip) {
 					}
 				});
 			} else {
-				console.error('Error: config file cannot be read.');
+				info('Error: config file cannot be read.');
 				fs.access(__dirname, fs.constants.W_OK, err => {
 					if (!err) {
 						configWritable = configReadable = true;
-						fs.writeFile(configFilename, JSON.stringify(defaultConfig), err => {
+						saveConfig().then(() => {
 							console.log('Sample config file (config.json) created. Please edit the file and restart the application.');
-							process.exit();
 						});
 					} else {
 						console.error('Error: cannot create sample config file. Please check the permissions or try creating ' +
@@ -166,26 +185,6 @@ async function setIPS(ip) {
 		});
 	});
 })();
-
-
-function saveConfig() {
-	return new Promise((resolve, reject) => {
-		fs.writeFile(configFilename, JSON.stringify(config), 'utf8', err => {
-			if (err) {
-				console.error('Cannot write the config file! Please check the permissions');
-				reject(err);
-			} else {
-				console.log('Your settings have been saved!');
-				resolve();
-			}
-		});
-	});
-}
-
-
-function getAuthHeader() {
-	return 'sso-key ' + config.apiKey + ':' + config.apiSecret;
-}
 
 
 async function setup() {
@@ -236,6 +235,7 @@ async function setup() {
 		});
 	}
 	await saveConfig().catch(err => process.exit(~0));
+	console.log('Your settings have been saved!');
 }
 
 
