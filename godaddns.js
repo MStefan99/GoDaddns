@@ -21,6 +21,7 @@ const defaultConfig = {
 	apiKey: 'Paste your API key here',
 	apiSecret: 'Paste your API secret here',
 	domains: [],
+	ttl: 3600,
 	autoUpdate: {
 		enabled: true,
 		interval: 60
@@ -30,7 +31,8 @@ let config = defaultConfig;
 
 
 function clamp(val, min, max) {
-	return val < min? min : val > max? max : val;
+	if (isNaN(val)) return null;
+	else return +val < min? min : val > max? max : val;
 }
 
 
@@ -94,7 +96,7 @@ async function setIPS(ip) {
 				name: record.name,
 				data: ip,
 				type: 'A',
-				ttl: 3600
+				ttl: clamp(config.ttl, 600, 604800) || 3600
 			};
 			info(newRecord);
 			const res = await fetch(godaddyEndpoint + '/v1/domains/' + domain.name + '/records/A/' + record.name, {
