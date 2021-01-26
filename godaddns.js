@@ -22,6 +22,7 @@ const defaultConfig = {
 	apiSecret: 'Paste your API secret here',
 	domains: [],
 	ttl: 3600,
+	resetOnExit: true,
 	autoUpdate: {
 		enabled: true,
 		interval: 60
@@ -102,7 +103,7 @@ async function setIPS(ip) {
 				ttl: clamp(config.ttl, 600, 604800) || 3600
 			};
 			info(newRecord);
-			const res = await fetch(godaddyEndpoint + '/v1/domains/' + domain.name + '/records/' +
+			await fetch(godaddyEndpoint + '/v1/domains/' + domain.name + '/records/' +
 				record.type + '/' + record.name, {
 					method: 'PUT',
 					headers: {
@@ -211,13 +212,13 @@ async function setup() {
 				type: 'input',
 				name: 'apiKey',
 				message: 'Your GoDaddy API Key:',
-				validate: val => val.length && !val.match(' ')
+				validate: val => (val.length && !val.match(' ')) || 'Please enter a valid key'
 			},
 			{
 				type: 'input',
 				name: 'apiSecret',
 				message: 'Your GoDaddy API secret:',
-				validate: val => val.length && !val.match(' ')
+				validate: val => (val.length && !val.match(' ')) || 'Please enter a valid secret'
 			}
 		]);
 		Object.assign(config, answers);
@@ -269,7 +270,7 @@ async function setup() {
 			return {type: 'A', name: record};
 		});
 	}
-	await saveConfig().catch(err => process.exit(~0));
+	await saveConfig().catch(() => process.exit(~0));
 	console.log('Your settings have been saved!');
 }
 
@@ -277,9 +278,11 @@ async function setup() {
 function init() {
 	console.log('Starting up GoDaddns...');
 
-	process.on('beforeExit', stop);
-	process.on('SIGTERM', stop);
-	process.on('SIGINT', stop);
+	if (config.resetOnExit) {
+		process.on('beforeExit', stop);
+		process.on('SIGTERM', stop);
+		process.on('SIGINT', stop);
+	}
 	enableAutoUpdate();
 	run();
 }
