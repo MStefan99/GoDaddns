@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="Run" type="NodeJSConfigurationType" path-to-js-file="godaddns.js" working-dir="$PROJECT_DIR$">
+  <configuration default="false" name="Run" type="NodeJSConfigurationType" application-parameters="-v" path-to-js-file="godaddns.js" working-dir="$PROJECT_DIR$">
     <method v="2" />
   </configuration>
 </component>

@@ -156,7 +156,7 @@ function getAuthHeader() {
 
 			if (configReadable) {
 				fs.readFile(path.resolve(configFilename), 'utf8', (err, data) => {
-					config = JSON.parse(data);
+					Object.assign(config, JSON.parse(data));
 
 					if (argumented.has(['-s', '--setup'])) {
 						if (configWritable) {
