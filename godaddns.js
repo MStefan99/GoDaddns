@@ -140,8 +140,7 @@ function getAuthHeader() {
 
 (() => {
 	argumented.init('GoDaddns. Never get a wrong IP again.');
-	argumented.add(['-s', '--setup'], null, 'Starts the app in an interactive mode ' +
-		'allowing you to select which records to update');
+	argumented.add(['-s', '--setup'], null, 'Starts the app in an interactive setup mode ');
 	argumented.add(['-v', '--verbose'], () => {
 		verbose = true;
 	}, 'Enable more verbose output');

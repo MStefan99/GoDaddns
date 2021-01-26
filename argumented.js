@@ -1,6 +1,7 @@
 'use strict';
 
 const argEntries = [];
+const helpArgs = ['-h', '--help'];
 let name = '';
 let desc = '';
 
@@ -20,9 +21,7 @@ function makeEntry(args, cb, desc, required = false) {
 function execute(entry) {
 	const idx = process.argv.findIndex(arg => entry.args.includes(arg));
 	if (idx >= 0) {
-		if (entry?.cb?.(...process.argv.slice(idx + 1, idx + entry.argNumber + 1))) {
-			process.exit(0);
-		}
+		entry?.cb?.(...process.argv.slice(idx + 1, idx + entry.argNumber + 1));
 	}
 }
 
@@ -33,7 +32,7 @@ function printHelpPage() {
 
 	for (const entry of argEntries) {
 		invocation += (entry.required? ' ' : ' [') + entry.args.join(', ') +
-			(entry.argNumber? ' (' + entry.argNumber + ' args)' : '') + (entry.required? '' : ']');
+			(entry.argNumber? ' (+' + entry.argNumber + ' args)' : '') + (entry.required? '' : ']');
 
 		paramDesc += '\t' + entry.args.join(', ') + (entry.argNumber? ' (+' + entry.argNumber + ' args)' : '') +
 			'\t' + entry.desc + '\n';
@@ -44,7 +43,7 @@ function printHelpPage() {
 		'\tnode ./' + name + invocation + '\n\n' +
 		'Options:\n' +
 		paramDesc);
-	return true;
+	process.exit();
 }
 
 
@@ -53,6 +52,8 @@ function init(description) {
 	if (description) {
 		desc = description;
 	}
+	// Help needs to be added first but execution is deferred to the end when argEntries is populated
+	add(helpArgs, null, 'Show this page');
 }
 
 
@@ -65,7 +66,9 @@ function add(args, callback = null, description = '', required = false) {
 	}
 	const entry = makeEntry(args, callback, description, required);
 	argEntries.push(entry);
-	execute(entry);
+	if (!has(helpArgs)) {
+		execute(entry);
+	}
 	return this;
 }
 
@@ -89,7 +92,9 @@ function done() {
 			}
 		}
 	}
-	add(['-h', '--help'], printHelpPage, 'Show this page');
+	if (has(helpArgs)) {
+		printHelpPage();
+	}
 }
 
 
