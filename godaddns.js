@@ -102,7 +102,7 @@ async function setIPS(ip) {
 				type: 'A',
 				ttl: clamp(config.ttl, 600, 604800) || 3600
 			};
-			info(newRecord);
+			info(' ', newRecord);
 			await fetch(godaddyEndpoint + '/v1/domains/' + domain.name + '/records/' +
 				record.type + '/' + record.name, {
 					method: 'PUT',
@@ -113,7 +113,7 @@ async function setIPS(ip) {
 					body: JSON.stringify([newRecord])
 				}
 			);
-			info('Record updated.');
+			info('  Record updated.');
 		}
 	}
 }
