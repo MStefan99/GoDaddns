@@ -259,6 +259,11 @@ function enableAutoUpdate() {
 
 
 async function run() {
+	if (!config.domains?.length) {
+		console.warn('Warning: No domains added! Please run with the -s flag to set up.');
+		process.exit(~2);
+	}
+
 	info('Getting IP address...');
 	const newIP = await fetch(ipifyEndpoint);
 	info('Got IP address:', newIP);
