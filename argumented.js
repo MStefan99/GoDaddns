@@ -14,14 +14,18 @@ function makeEntry(args, cb, desc, required = false) {
 	if (!args instanceof Array) {
 		args = [args];
 	}
-	return {args, cb, required, desc, argNumber: cb?.length || 0};
+	return {args, cb, required, desc, argNumber: cb? cb.length : 0};
 }
 
 
 function execute(entry) {
+	if (!entry) {
+		return;
+	}
+
 	const idx = process.argv.findIndex(arg => entry.args.includes(arg));
-	if (idx >= 0) {
-		entry?.cb?.(...process.argv.slice(idx + 1, idx + entry.argNumber + 1));
+	if (idx >= 0 && entry.cb) {
+		entry.cb(...process.argv.slice(idx + 1, idx + entry.argNumber + 1));
 	}
 }
 

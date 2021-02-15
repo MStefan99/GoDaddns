@@ -83,10 +83,12 @@ function fetch(url, init = {}) {
 			reject(err);
 		});
 
-		if (init?.method?.toUpperCase() !== 'GET') {
-			req.end(init.body);
-		} else {
-			req.end();
+		if (init.method) {
+			if (init.method.toUpperCase() !== 'GET') {
+				req.end(init.body);
+			} else {
+				req.end();
+			}
 		}
 	});
 }
@@ -291,17 +293,21 @@ function init() {
 function enableAutoUpdate() {
 	setInterval(() => {
 		info('Updating IP...');
-		if (config.autoUpdate?.enabled) {
-			run();
+		if (config.autoUpdate) {
+			if (config.autoUpdate.enabled) {
+				run();
+			}
 		}
-	}, 1000 * 60 * clamp(config.autoUpdate?.interval, 5, 1440));
+	}, 1000 * 60 * clamp(config.autoUpdate.interval, 5, 1440));
 }
 
 
 async function run() {
-	if (!config.domains?.length) {
-		console.warn('Warning: No domains added! Please run with the -s flag to set up.');
-		process.exit(~2);
+	if (config.domains) {
+		if (!config.domains.length) {
+			console.warn('Warning: No domains added! Please run with the -s flag to set up.');
+			process.exit(~2);
+		}
 	}
 
 	info('Getting IP address...');
