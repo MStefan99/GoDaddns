@@ -7,8 +7,8 @@ const fs = require('fs');
 const inquirer = require('inquirer');
 const argumented = require('./argumented');
 
-const godaddyEndpoint = 'https://api.godaddy.com/';
-const ipifyEndpoint = 'https://ipapi.co/ip/';
+const godaddyEndpoint = 'https://api.godaddy.com';
+const ipEndpoint = 'https://ipapi.co/ip';
 
 let configReadable = false;
 let configWritable = false;
@@ -72,23 +72,21 @@ function fetch(url, init = {}) {
 
 			res.on('end', () => {
 				if (Math.floor(res.statusCode / 100) !== 2) {
-					console.error('Error: HTTP request failed:', str);
-					process.exit(~1);
+					reject(res.statusCode);
 				}
 				resolve(str);
 			});
 		});
 
 		req.on('error', err => {
-			reject(err);
+			console.error('Error: HTTP request failed:', err);
+			process.exit(~1);
 		});
 
-		if (init.method) {
-			if (init.method.toUpperCase() !== 'GET') {
-				req.end(init.body);
-			} else {
-				req.end();
-			}
+		if (init.method? init.method.toUpperCase() !== 'GET' : false) {
+			req.end(init.body);
+		} else {
+			req.end();
 		}
 	});
 }
@@ -303,15 +301,13 @@ function enableAutoUpdate() {
 
 
 async function run() {
-	if (config.domains) {
-		if (!config.domains.length) {
-			console.warn('Warning: No domains added! Please run with the -s flag to set up.');
-			process.exit(~2);
-		}
+	if (config.domains? !config.domains.length : false) {
+		console.warn('Warning: No domains added! Please run with the -s flag to set up.');
+		process.exit(~2);
 	}
 
 	info('Getting IP address...');
-	const newIP = await fetch(ipifyEndpoint);
+	const newIP = await fetch(ipEndpoint);
 	info('Got IP address:', newIP);
 
 	if (newIP !== ip) {
