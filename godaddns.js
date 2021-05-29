@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 
 const inquirer = require('inquirer');
-const argumented = require('./argumented');
+const argumented = require('argumented');
 
 const godaddyEndpoint = 'https://api.godaddy.com';
 const ipEndpoint = 'https://ipapi.co/ip';
@@ -140,12 +140,11 @@ function getAuthHeader() {
 
 
 (() => {
-	argumented.init('GoDaddns. Never get a wrong IP again.');
-	argumented.add(['-s', '--setup'], null, 'Starts the app in an interactive setup mode ');
-	argumented.add(['-v', '--verbose'], () => {
-		verbose = true;
-	}, 'Enable more verbose output');
-	argumented.done();
+	argumented.description('GoDaddns. Never get a wrong IP again.');
+	argumented.add('setup', ['-s', '--setup'], null, 'Starts the app in an interactive setup mode ');
+	argumented.add('verbose', ['-v', '--verbose'], null, 'Enable more verbose output');
+	const options = argumented.parse();
+	verbose = options.verbose;
 
 	fs.access(configFilename, fs.constants.R_OK, err => {
 		configReadable = !err;
@@ -158,7 +157,7 @@ function getAuthHeader() {
 				fs.readFile(path.resolve(configFilename), 'utf8', (err, data) => {
 					Object.assign(config, JSON.parse(data));
 
-					if (argumented.has(['-s', '--setup'])) {
+					if (options.setup) {
 						if (configWritable) {
 							console.info('Welcome to GoDaddns! Let\'s choose the records you want to be updated.');
 							setup()
