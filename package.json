@@ -10,7 +10,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"argumented": "^1.0.0",
+		"@mstefan99/argumented": "^1.0.0",
 		"inquirer": "^7.3.3"
 	}
 }

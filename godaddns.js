@@ -5,7 +5,7 @@ const path = require('path');
 const fs = require('fs');
 
 const inquirer = require('inquirer');
-const argumented = require('argumented');
+const argumented = require('@mstefan99/argumented');
 
 const godaddyEndpoint = 'https://api.godaddy.com';
 const ipEndpoint = 'https://ipapi.co/ip';
