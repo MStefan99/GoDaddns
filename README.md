@@ -1,10 +1,15 @@
 # GoDaddns
 
+![Maintenance](https://img.shields.io/maintenance/yes/2023?style=flat-square)
+
 
 ## What is this?
 
 GoDaddns is a tiny Node.js DDNS app which automatically updates your records on GoDaddy to match your server IP so that
-you don't need to worry about having a dynamic IP anymore. (Read more about DDNS [here][ddns]).
+you don't need to worry about having a dynamic IP anymore. (Read more about DDNS [here][ddns]). I developed GoDaddns
+because using 3rd-party apps didn't feel safe enough and going through other open-source apps would've taken me too long.
+This app, however, is under 300 lines of code so you can easily verify how it works before giving it your valuable 
+domain credentials.
 
 
 ## Features
