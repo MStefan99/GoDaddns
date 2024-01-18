@@ -271,6 +271,7 @@ async function setup() {
 			})).resetOnExit;
 		}
 	}
+	await config._save();
 	return true;
 }
 
