@@ -1,4 +1,3 @@
-
 # Created by https://www.toptal.com/developers/gitignore/api/webstorm,node
 # Edit at https://www.toptal.com/developers/gitignore?templates=webstorm,node
 
@@ -222,5 +221,5 @@ fabric.properties
 # End of https://www.toptal.com/developers/gitignore/api/webstorm,node
 
 keys.txt
-config.json
+config*.json
 ip.txt
