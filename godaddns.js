@@ -18,25 +18,6 @@ export const options = argumented.parse();
 
 export const config = new Config('./config.json');
 export const configPromise = config._load();
-config.defaults = {
-	schema: 'v2',
-	credentials: {
-		key: 'Paste your API key here',
-		secret: 'Paste your API secret here',
-	},
-	crashCourse: {
-		enabled: false,
-		host: 'https://crash-course.apps.mstefan99.com/api',
-		key: '8e471c677e4523ab',
-	},
-	domains: [],
-	ttl: 3600,
-	resetOnExit: true,
-	autoUpdate: {
-		enabled: true,
-		interval: 60
-	}
-};
 
 function clamp(val, min, max) {
 	if (typeof val !== 'number' || isNaN(val)) {
