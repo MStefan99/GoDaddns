@@ -87,7 +87,7 @@ async function setIPs(ip) {
 					return false;
 				}
 			} catch (err) {
-				console.warn('Failed to update '+ record.name + ':', err);
+				console.warn('Failed to update ' + record.name + ':', err);
 				console.info('Update request failed', err);
 			}
 		}
@@ -103,7 +103,8 @@ async function setup() {
 		type: 'confirm',
 		message: 'Do you want to enable submitting anonymous error reports? ' +
 			'This is optional but it helps fix issues and improve the user experience.',
-		name: 'analytics'
+		name: 'analytics',
+		default: false
 	})).analytics;
 
 	const promptCredentials = !config.credentials?.key?.length
@@ -113,7 +114,8 @@ async function setup() {
 		|| (await inquirer.prompt({
 			type: 'confirm',
 			name: 'credentials',
-			message: 'You already have GoDaddy credentials saved. Do you want to change them?'
+			message: 'You already have GoDaddy credentials saved. Do you want to change them?',
+			default: false
 		})).credentials;
 
 	if (promptCredentials) {
@@ -228,6 +230,47 @@ async function setup() {
 		await config._save();
 	}
 
+	// Setting up extra options
+	if ((await inquirer.prompt({
+		type: 'confirm',
+		name: 'extra',
+		message: 'Do you want to change extra options?',
+		default: false
+	})).extra) {
+		config.autoUpdate.enabled = (await inquirer.prompt({
+			type: 'confirm',
+			name: 'autoUpdate',
+			message: 'Do you want to enable auto update?',
+			default: true
+		})).autoUpdate;
+		if (config.autoUpdate.enabled) {
+			config.autoUpdate.interval = (await inquirer.prompt({
+				type: 'number',
+				name: 'interval',
+				message: 'Choose update interval from 1 to 1440 (in minutes)',
+				default: 60
+			})).interval;
+		}
+		if ((await inquirer.prompt({
+			type: 'confirm',
+			name: 'advanced',
+			message: 'Do you want to change advanced options? Skip if unsure',
+			default: false
+		})).advanced) {
+			config.ttl = (await inquirer.prompt({
+				type: 'number',
+				name: 'ttl',
+				message: 'Choose TTL for records from 600 to 604800 (in seconds)',
+				default: 3600
+			})).ttl;
+			config.resetOnExit = (await inquirer.prompt({
+				type: 'confirm',
+				name: 'resetOnExit',
+				message: 'Do you want to reset DNS records on exit? Disabling may leave your domain vulnerable',
+				default: true
+			})).resetOnExit;
+		}
+	}
 	return true;
 }
 
