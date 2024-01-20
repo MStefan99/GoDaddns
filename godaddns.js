@@ -287,7 +287,7 @@ async function update() {
 
 	if (config.domains ? !config.domains.length : false) {
 		console.warn('Warning: No domains added! Please run with the -s flag to set up.');
-		process.exit(~0);
+		process.exit(~2);
 	}
 
 	console.info('Getting IP address...');
