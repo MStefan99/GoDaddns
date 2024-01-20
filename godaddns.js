@@ -61,14 +61,14 @@ async function setIPs(ip) {
 					}
 				);
 				if (res.ok) {
-					console.info('Record updated.');
+					console.info('Record', record.name + '.' + domain.name, 'updated.');
 				} else {
-					console.warn('Failed to update', record.name);
+					console.warn('Failed to update', record.name + '.' + domain.name);
 					console.info('Update request returned an error:', await res.json());
 					return false;
 				}
 			} catch (err) {
-				console.warn('Failed to update ' + record.name + ':', err);
+				console.warn('Failed to update', record.name + '.' + domain.name + ':', err);
 				console.info('Update request failed', err);
 			}
 		}
