@@ -265,8 +265,11 @@ async function init() {
 		process.on('SIGTERM', stop);
 		process.on('SIGINT', stop);
 	}
-	enableAutoUpdate();
-	update();
+
+	const updated = await update();
+	if (updated && config.autoUpdate?.enabled) {
+		await enableAutoUpdate();
+	}
 }
 
 async function enableAutoUpdate() {
@@ -274,11 +277,7 @@ async function enableAutoUpdate() {
 
 	updateInterval = setInterval(() => {
 		console.info('Updating IP...');
-		if (config.autoUpdate) {
-			if (config.autoUpdate.enabled) {
-				update();
-			}
-		}
+		update();
 	}, 1000 * 60 * clamp(config.autoUpdate.interval, 5, 1440));
 }
 
@@ -287,7 +286,7 @@ async function update() {
 
 	if (config.domains ? !config.domains.length : false) {
 		console.warn('Warning: No domains added! Please run with the -s flag to set up.');
-		process.exit(~2);
+		return false;
 	}
 
 	console.info('Getting IP address...');
@@ -305,10 +304,13 @@ async function update() {
 			}
 		} else {
 			console.warn('IP request returned an error:', await res.text());
+			return false;
 		}
 	} catch (err) {
 		console.warn('IP request failed:', err);
+		return false;
 	}
+	return true;
 }
 
 async function stop() {
