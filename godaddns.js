@@ -1,5 +1,8 @@
 'use strict';
 
+import * as path from 'path';
+import {fileURLToPath} from 'url';
+
 import inquirer from 'inquirer';
 import argumented from './lib/argumented.cjs';
 import Config from './lib/configurer.cjs';
@@ -17,7 +20,8 @@ argumented.add('verbose', ['-v', '--verbose'], null, 'Enable verbose logs');
 export const options = argumented.parse();
 
 
-export const config = new Config('./config.json');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+export const config = new Config(path.join(__dirname, 'config.json'));
 export const configPromise = config._load();
 
 function clamp(val, min, max) {
