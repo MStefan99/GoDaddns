@@ -12,7 +12,7 @@ import './lib/crash-course.js';
 const godaddyEndpoint = 'https://api.godaddy.com';
 const ipEndpoint = 'https://ipapi.co/ip';
 let ip = '0.0.0.0';
-let updateInterval = null;
+let updateTimeout = null;
 
 argumented.description('GoDaddns. Never get a wrong IP again.');
 argumented.add('setup', ['-s', '--setup'], null, 'Starts the app in an interactive setup mode');
@@ -270,19 +270,17 @@ async function init() {
 		process.on('SIGINT', stop);
 	}
 
-	const updated = await update();
-	if (updated && config.autoUpdate?.enabled) {
-		await enableAutoUpdate();
-	}
+	autoUpdate();
 }
 
-async function enableAutoUpdate() {
-	await configPromise;
-
-	updateInterval = setInterval(() => {
-		console.info('Updating IP...');
-		update();
-	}, 1000 * 60 * clamp(config.autoUpdate.interval, 5, 1440));
+async function autoUpdate() {
+	await config._load();
+	console.info('Updating IP...');
+	update();
+	if (config.autoUpdate.enabled) {
+		console.log('auto update');
+		updateTimeout = setTimeout(autoUpdate, 1000 * 60 * clamp(config.autoUpdate.interval, 5, 1440));
+	}
 }
 
 async function update() {
@@ -321,7 +319,7 @@ async function stop() {
 	console.log('Shutting down GoDaddns...');
 
 	await setIPs('0.0.0.0') && console.log('All records reset, GoDaddns done');
-	clearInterval(updateInterval);
+	clearInterval(updateTimeout);
 }
 
 (async () => {
