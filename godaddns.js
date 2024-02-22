@@ -278,7 +278,6 @@ async function autoUpdate() {
 	console.info('Updating IP...');
 	update();
 	if (config.autoUpdate.enabled) {
-		console.log('auto update');
 		updateTimeout = setTimeout(autoUpdate, 1000 * 60 * clamp(config.autoUpdate.interval, 5, 1440));
 	}
 }
