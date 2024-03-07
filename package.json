@@ -3,6 +3,7 @@
 	"version": "1.0.0",
 	"description": "DDNS for your GoDaddy domains",
 	"main": "godaddns.js",
+	"type": "module",
 	"scripts": {
 		"run": "node godaddns.js"
 	},
@@ -10,7 +11,6 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"@mstefan99/argumented": "^1.0.0",
-		"inquirer": "^7.3.3"
+		"inquirer": "^9.2.12"
 	}
 }
